@@ -1,0 +1,47 @@
+FROM node:20
+
+WORKDIR /usr/src/app
+
+COPY ./package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "index.js"]
+
+# ---------------------------------------------------------------------- correct way:
+
+# Why do people split COPY into two steps?
+
+# The recommended Dockerfile is actually this:
+
+# FROM node:20                      # LAYER 1
+
+# WORKDIR /usr/src/app                      # LAYER 2
+
+# COPY package*.json ./                      # LAYER 3
+
+# RUN npm install                      # LAYER 4
+
+# COPY . .                      # LAYER 5
+
+# EXPOSE 3000                      # LAYER 7
+
+# CMD ["node", "index.js"]                      # LAYER 8
+
+# Why?
+
+# ! Because Docker caches layers.
+
+# next time you edit a file, only the COPY . . changes, docker notices that
+# package.json didn't change so it resuses the cached layer for RUN npm install instead of
+# re-installing everything
+# Without this optimization, every code change forces
+# npm install
+# to run again, which can be slow.
+
+# layer 1-7 run when you are creating the image
+# layer 8 runs only when you actually start the container
