@@ -1,0 +1,187 @@
+Docker cheatsheet.txt
+
+-------------------------------------------------------------------------------------------------------------------
+
+Authentication:
+
+docker login
+
+docker logout
+
+-------------------------------------------------------------------------------------------------------------------
+
+Building:
+
+docker build .							builds a docker image from the dockerfile (will generate a random tag)
+
+docker build . -t <image-tag>			build image + specify name/tag of image
+
+docker tag <old-tag> <new-tag>			rename/retag your image
+
+-------------------------------------------------------------------------------------------------------------------
+
+Images:
+
+docker images							see all the docker images you have
+
+docker image inspect mongo 				inspect a container's docker image
+
+docker rmi <image-id>					remove image
+
+docker rmi -f <image-id>				-f flag to force remove
+
+-------------------------------------------------------------------------------------------------------------------
+
+Running:
+docker run <image-tag>							run the image (create a container => an instance of the image => run it)
+
+docker run -e <env-name>=<value> <image-name>			passing an environment variable to the container
+
+docker run -d -p 3000:3000 --name env-backend --network test-network -e MONGO_URI=mongodb://mymongodb:27017/mydatabase env-backend-app:latest
+
+docker run -p <host-port>:<container-port> <image-tag>
+												runs the image + maps host-machine-port to the container-port
+												eg: backend listens on 3000 (OF THE CONTAINER)
+													you must route the machine port (eg: 5173) to 3000 of container
+													container does:
+													"any request coming on machine's 5173 => route it to my 3000"
+
+docker run -d <image-tag>						runs the container in "detached" mode, gives you back control incmd
+
+docker run --name <container-name> <image-name>			running a container with a specified name
+
+docker start <container-name> 						start an already created container
+
+docker exec -it <container_name_or_id> /bin/bash		kinda ssh into the running docker container  => BASH shell (ubuntu)
+docker exec -it <container_name_or_id> sh		kinda ssh into the running docker container   => POSIX shell (alpine)
+
+-------------------------------------------------------------------------------------------------------------------
+
+Containers:
+
+docker ps										gives a list of all currently active containers
+
+docker ps -a 									gives a list of all active containers (Active or NOT BOTH)
+
+docker kill <container-id>						both allow you to kill the active container
+docker kill <container-name>					(id and names can be retrieved from docker ps)
+
+-------------------------------------------------------------------------------------------------------------------
+
+Registry:
+	Notes:
+		[registry]/[namespace]/[repository]:[tag]		=>		format followed
+
+		A Docker Hub repository stores one image lineage, with different versions represented by tags.
+		you cannot do:
+					docker build . -t simple-app		and then try to push this onto docker hub
+		because:
+			Docker Hub expects the image name to match the repository you're pushing to.
+		you will need to:
+					do docker tag simple-app vineet0194/docker-learning
+
+		Docker Hub identifies which repository to push to from the image's tag.
+		Therefore, the image must be tagged with the repository name before pushing.
+		therefore, it needs to be named as:
+										docker build . -t vineet0194/docker-learning
+		here,
+			vineet0194 => username
+			docker-learning => repo/image name since in docker, 1 repo represents 1 image
+
+		now, how to version the image?!	using colons(:)
+		like:
+			1 image can be:
+						docker build . -t vineet0194/docker-learning:v1
+			another can be:
+						docker build . -t vineet0194/docker-learning:v2
+			=> you tag the image (you can also abuse it to kinda store multiple un-related images in 1 repo)
+
+docker push <image-tag>							push your docker image to dockerhub
+
+docker pull <image-tag>							pull an image from dockerhub
+
+then later do docker run <image-tag> to run this pulled image
+
+-------------------------------------------------------------------------------------------------------------------
+
+Volumes:
+
+docker volume create <volume-name>						creating a new volume in the docker engine
+docker volume ls 										list all volumes created
+docker volume rm <volume-name>							deletes volume with given name
+
+docker run -v <volume-name>:<folder-path> <image-name>   	specifying some volume to a container so that data persists
+															across restarts of the container
+															The <folder-path> is the path inside the container
+eg:
+	docker volume create vol_database								creates a new volume named "vol_database"
+	docker run -v vol_database:/data/db -p 27017:27017 mongo		mounts the docker volume "vol_database" at "/data/db"
+																	inside the container
+																	    MongoDB writes its database files to "/data/db",
+																	    so those files are actually stored in the
+																	    "vol_database" volume.
+
+you can alternatively do the same thing the dockerfile too:
+
+-------------------------------------------------------------------------------------------------------------------
+
+Network:
+
+If both containers are attached to the same Docker network:
+-> The containers can communicate with each other directly.
+-> They do not share ports.
+-> They share the same virtual network, meaning they can reach each other using container names.
+
+understand like:
+Docker creates a bridge network, something like this internally:
+		Network: test-network
+		Subnet: 172.18.0.0/16
+
+Assigning networks while starting the container means joining the network, getting assigned some IP inside the network
+like:
+		test-network
+		172.18.0.0/16
+
+		backend
+		172.18.0.3
+
+		mymongodb
+		172.18.0.2
+
+using the container names, you can resolve container ip
+
+why not write the container's ip directly?
+-> it is dynamic, will/might change upon restarts
+-> Docker's DNS automatically maps the name to the current IP
+
+
+docker network ls 										lists all the networks
+docker network create <network-name>					create network
+docker network rm test-network							delete a network 
+
+docker run --network <network-name> <image-tag>			run the container with the network specified
+														better idea to name the container this time, as you will be using
+														this when you need to communicate from 1 container to another
+														within the network
+
+eg:
+	docker network create test-network
+
+	docker volume create volume_database
+
+	docker run -d --name mymongodb -p 27017:27017 -v volume_database:/data/db --network test-network mongo 		database
+	docker run -d --name backend -p 3000:3000 --network test-network complex-app:latest 						backend
+
+	now if you do mymongodb:27017 => "mymongodb" resolves to the container's IP address on the test-network
+
+-------------------------------------------------------------------------------------------------------------------
+
+Tips to reduce image size:
+	Use alpine base image (lightweight)
+	Remove Dev-dependencies
+	Multi-stage builds
+
+Other tips:
+	npm ci instead of npm i => uses package-lock.json instead of package.json => not size thing but cleaner
+	Cache mount => reduces build time not size
+	Run as user (not root) => not size but security thing
