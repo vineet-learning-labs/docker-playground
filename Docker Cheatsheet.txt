@@ -16,6 +16,10 @@ docker build .							builds a docker image from the dockerfile (will generate a 
 
 docker build . -t <image-tag>			build image + specify name/tag of image
 
+docker build -f <file-path>				used to give a file path for docker file
+										useful if you have a dockerfile which is named something other
+										than "Dockerfile" or is in a location i.e not your proj directory
+
 docker tag <old-tag> <new-tag>			rename/retag your image
 
 ! multi-stage builds !
@@ -84,8 +88,10 @@ docker ps										gives a list of all currently active containers
 
 docker ps -a 									gives a list of all active containers (Active or NOT BOTH)
 
-docker kill <container-id>						both allow you to kill the active container
-docker kill <container-name>					(id and names can be retrieved from docker ps)
+docker kill <container-id-or-id>				both allow you to kill the active container
+												(id and names can be retrieved from docker ps)
+
+docker rm <container-name-or-id>				deletes that container
 
 -------------------------------------------------------------------------------------------------------------------
 
@@ -199,6 +205,36 @@ eg:
 
 Docker Compose:
 
+Docker Compose is a tool for defining and running multi-container Docker applications using a single YAML configuration file. Using this YAML file, you configurate your application's services.
+Then, with a single command, you create and start all the services in your configuration.
+
+! by default, containers defined in the SAME docker-compose.yml file are connected to the SAME Docker network.
+
+docker compose build 											build images only
+
+docker compose up 												start containers from existing images
+
+docker compose up --build										build images and start containers
+
+YAML file can look like:
+
+services:
+  mongodbi_db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db   # bind it to mongo at this path
+    networks:
+      - test-network
+  custom_app:
+    build: ./         # build using a dockerfile
+    ports:
+      - "3000:3000"
+
+# create a volume
+volumes:
+  mongodb-data:
 
 
 -------------------------------------------------------------------------------------------------------------------

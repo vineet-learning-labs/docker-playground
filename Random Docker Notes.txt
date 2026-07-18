@@ -45,3 +45,35 @@ Used to create containers							Executes your application
 Doesn't change during execution						Can change while running
 Stored in registries or locally						Exists on the Docker host
 Can create many containers							Each container is independent
+
+----------------------------------------------------------------------------------------------------------
+
+Q. (from chatgpt session)
+i know i will have to build a new image upon changes i manually make in my own system (outside container)
+but is there a way i can somehow sync the changes, without using docker compose yet, maybe with volumes?
+
+Bind mounts solve this
+
+Instead of using the copied files, you can tell Docker:
+
+"Use my local project directory directly."
+
+For example:
+
+docker run -d `
+> -p 3000:3000 `
+> -v ${PWD}:/usr/src/app `      => this means BINDING pwd to container's /usr/src/app
+> --name ms-dev `
+> multi-stage:dev
+
+Now the container sees:
+
+Host                        Container
+project/           as       /usr/src/app
+    index.js
+    index.html
+
+Now, nodemon syncs changes from your host's file system to the container
+
+----------------------------------------------------------------------------------------------------------
+
