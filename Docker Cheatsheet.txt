@@ -10,13 +10,34 @@ docker logout
 
 -------------------------------------------------------------------------------------------------------------------
 
-Building:
+Building Image:
 
 docker build .							builds a docker image from the dockerfile (will generate a random tag)
 
 docker build . -t <image-tag>			build image + specify name/tag of image
 
 docker tag <old-tag> <new-tag>			rename/retag your image
+
+! multi-stage builds !
+
+When building an image from a Dockerfile that contains multiple build stages,
+you can build a specific stage (such as development or production) by using the --target flag.
+
+docker build . -t <image-name> --target <target-name>
+
+so if your docker file something like:
+FROM ... AS base
+...
+
+FROM base AS development
+...
+
+FROM base AS production
+
+you can create a dev image as:
+							docker build . -t dev-image --target development
+you can create a prod image as:
+							docker build . -t prod-image --target production
 
 -------------------------------------------------------------------------------------------------------------------
 
@@ -173,6 +194,12 @@ eg:
 	docker run -d --name backend -p 3000:3000 --network test-network complex-app:latest 						backend
 
 	now if you do mymongodb:27017 => "mymongodb" resolves to the container's IP address on the test-network
+
+-------------------------------------------------------------------------------------------------------------------
+
+Docker Compose:
+
+
 
 -------------------------------------------------------------------------------------------------------------------
 

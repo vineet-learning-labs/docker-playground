@@ -1,0 +1,47 @@
+to containerise your entire app,
+
+you first create a docker file, this helps me to tell docker how to "containerise" my app
+
+then you build a docker image from that docker file by => docker build -t <image_name>
+-t is a flag given when you need to name your image
+
+after this you will see a new image with the given name in docker desktop
+
+this image tells me how will me container look like (how to run etc.)
+
+now you can run a container based on this image
+
+
+
+docker might show in logs that:  INFO  Accepting connections at http://localhost:3000
+but your app is listening on the port you specified (8089)
+
+3000 = port inside the container (where React's dev server is running)
+8089 = port on your computer
+
+This is expected behavior. The key is that there are two different ports involved:
+
+The port your app listens on inside the container (container port)	=> 3000
+The port Docker exposes on your host machine (host port)			=> 8089
+
+syntax:
+docker run -p <host_port>:<container_port>
+
+host part is the one exposed to user,
+container port is the internal port (in container) on what the app is listening on
+
+------------------------------------------------------------------------------------------
+
+Docker Image vs. Container
+
+A Docker image is a blueprint or template.
+A Docker container is a running (or stopped) instance created from that blueprint.
+
+Here's a comparison:
+
+Docker Image										Docker Container
+Read-only template									Running instance of an image
+Used to create containers							Executes your application
+Doesn't change during execution						Can change while running
+Stored in registries or locally						Exists on the Docker host
+Can create many containers							Each container is independent
